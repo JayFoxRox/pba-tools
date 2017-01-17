@@ -51,17 +51,17 @@ typedef struct {
       // 0x005F = Version
 
       // DX11 (also supports DX9 types):
-      // 0x008D = Texture [same as 0022 but also JPEG etc?]
+      // 0x008D = Texture [extension of 0022 but also JPEG etc?]
       // 0x008E = DIM (model file) [Similar to 0024 but without normal?!]
       // 0x008F = WAV stuff [Same as 0025 ?!]
     union {
       uint16_t compression;
         // DX9:
         // 0x0000 = Raw data
-        // 0x0001 = Sliding window (LZSS or LZ77 ?!)
+        // 0x0001 = LZSS
         
         // DX11 (also supports DX9 compressions):
-        // 0x0009 = Sliding window (LZSS or LZ77 ?!)
+        // 0x0009 = LZSS
       uint16_t tableOffset; // from end
     };
     uint32_t flags; // Alignment?!
@@ -97,7 +97,7 @@ void unpackRaw(FILE* in, FILE* out, size_t length) {
   }
 }
 
-void unpackCompressed(FILE* in, FILE* out, size_t length) {
+void unpackLZSS(FILE* in, FILE* out, size_t length) {
   uint32_t outputLength;
   uint32_t processedLength = 0;
   uint16_t c = 0; // Cursor for the window (automaticly wraps!)
@@ -157,26 +157,16 @@ length = outputLength;
   }
 }
 
-void export(FILE* f, FileHeader fileHeader, const char* path) {
+void export(FILE* f, FileHeader* fileHeader, const char* path, bool compressed) {
   size_t cursor = ftell(f);
-  fseek(f, fileHeader.offset, SEEK_SET);
-  printf("Exporting '%s'\n", path);
+  fseek(f, fileHeader->offset, SEEK_SET);
+  printf("Exporting '%s' (Compressed: %d)\n", path, compressed);
   FILE* out = fopen(path, "wb");
   assert(out != NULL);
-  switch(fileHeader.compression) {
-    case 0x0000:
-      unpackRaw(f, out, fileHeader.unpackedLength);
-      break;
-    case 0x0001:
-      unpackCompressed(f, out, fileHeader.unpackedLength);
-      break;
-    case 0x0009:
-      unpackCompressed(f, out, fileHeader.unpackedLength);
-//      assert(false);
-      break;
-    default:
-      assert(false);
-      break;
+  if (compressed) {
+    unpackLZSS(f, out, fileHeader->unpackedLength);
+  } else {
+    unpackRaw(f, out, fileHeader->packedLength);
   }
   fclose(out);
   fseek(f, cursor, SEEK_SET);
@@ -184,6 +174,7 @@ void export(FILE* f, FileHeader fileHeader, const char* path) {
 
 int main(int argc, char* argv[]) {
   FILE* f = fopen(argv[1], "rb");
+  const char* outPath = argv[2];
 
   // This is the actual header
 
@@ -222,7 +213,7 @@ int main(int argc, char* argv[]) {
            resourceHeader.always0);
 
     // Dump file table for resources
-    if ((resourceHeader.flags & 0x10) == 0) {
+    if (resourceHeader.type == 0x0013) {
       size_t cursor = ftell(f);
       fseek(f, tableAddress, SEEK_SET);
       
@@ -251,16 +242,24 @@ int main(int argc, char* argv[]) {
                fileHeader.always0);
 
         char buf[1024];
-        sprintf(buf, "unpacked/%d-%d.%04X", header.resourceIndex + i, j, fileHeader.type);
-        export(f, fileHeader, buf);
+        sprintf(buf, "%s/%d-%d.%04X", outPath, header.resourceIndex + i, j, fileHeader.type);
+        export(f, &fileHeader, buf,
+#if 0
+          // Old version
+          fileHeader.compression != 0
+#else
+          // PC11
+          fileHeader.compression > 1
+#endif
+        );
       }
 
       fseek(f, cursor, SEEK_SET);
     } else {
       //FIXME: Dump resource directly..
       char buf[1024];
-      sprintf(buf, "unpacked/%d.%04X", header.resourceIndex + i, resourceHeader.type);
-      export(f, resourceHeader, buf);
+      sprintf(buf, "%s/%d.%04X", outPath, header.resourceIndex + i, resourceHeader.type);
+      export(f, &resourceHeader, buf, false);
     }
   }
 

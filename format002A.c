@@ -7,51 +7,198 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+FILE* out = NULL;
+
+#include "json.h"
+
+typedef struct {
+  char sourceFile[32];
+  char sourcePath[256];
+  uint32_t objectCount;
+  uint32_t unk0;
+/*
+union {
+  float f[272 / 4];
+  struct {
+    float x;
+    float y;
+    float z;
+
+    float x2;
+    float y2;
+    float z2;
+
+    float a;
+    float b;
+  } unk2[1];
+}
+*/
+    // objectCount = sizeof(unk)
+    // 41 = 168 (not sure which game, but 2007-0 / totan?!)
+    // 120 = 168 (not sure which game, but 2007-1 / totan?!)
+    // 67 = 272 BK2K
+    // 89 = 360 TAF PC
+    // 187 = 360 TAF PS4 [identical to PC]
+} Header;
+
+typedef struct {
+  uint32_t placementCount;
+  uint32_t unk0;
+  uint32_t unk1; // unk1 of previous object incremented by the size of this one
+} Object;
+
+typedef struct {
+  struct {
+    float x;
+    float y;
+    float z;
+  } position;
+  struct {
+    float x;
+    float y;
+    float z;
+  } angle; // In radians!
+  struct {
+    float x;
+    float y;
+    float z;
+  } scale;
+} __attribute__((packed)) Placement;
+
 int main(int argc, char* argv[]) {
   FILE* in = fopen(argv[1], "rb");
-  typedef struct {
-    char sourceFile[32];
-    char sourcePath[256];
-    uint32_t placementCount;
-    uint8_t unk[272];
-  } Header;
-  typedef struct {
-    char model[40];
-    uint32_t unk0;
-    struct {
-      float x;
-      float y;
-      float z;
-    } position;
-//    uint8_t imp[16]; // 16 bytes [quaternion rotation?]
-    uint8_t tmp[8]; // uninteresting? [scale of some sorts?]
-    uint32_t unk1;
-    struct {
-      float x;
-      float y;
-      float z;
-    } scale;
-  } __attribute__((packed)) Placement;
+  out = fopen(argv[2], "wb");
+  startObject();
 
   Header header;
   fread(&header, sizeof(header), 1, in);
   printf("Source file: '%.32s'\n", header.sourceFile);
   printf("Source path: '%.256s'\n", header.sourcePath);
 
-  for(unsigned int i = 0; i < header.placementCount; i++) {
-    Placement placement;
-    fread(&placement, sizeof(placement), 1, in);
+  putKey("sourceFile"); putString(header.sourceFile);
+  putKey("sourcePath"); putString(header.sourcePath);
 
-    printf("[%d] = Placing '%.40s' 0x%08X position: { %f %f %f } 0x%08X scale: { %f %f %f }\n",
+uint32_t t = header.unk0;
+size_t l = 0;
+switch(t) {
+  case 0x08EB89D0: l = 324; break;
+  case 0x076D4E88: l = 164; break;
+  case 0x00BAB748: l = 164; break;
+  case 0x0554B640: l = 232; break;
+  case 0x05C5DE08: l = 176; break;
+  case 0x04DFFE58: l = 328; break;
+  case 0x069AC2F0: l = 216; break;
+  case 0x08F3C4F0: l = 156; break;
+  case 0x080739A8: l = 260; break;
+  case 0x05D170F8: l = 268; break;
+  case 0x08393130: l = 356; break;
+  case 0x08EB3288: l = 308; break;
+  case 0x0A236268: l = 232; break;
+
+  // DX11
+  case 0x06B82EF8: l = 232; break;
+  case 0x062DF990: l = 268; break;
+  case 0x064CB3A0: l = 308; break;
+
+
+  default:
+    printf("  case 0x%08X: l = ; break;\n", t);
+    assert(false);
+    break;
+}
+
+  printf("using l = %d, from: 0x%08X, %d\n", l, t, header.objectCount);
+  for(unsigned int i = 0; i < l / 4; i++) {
+    uint32_t u;
+    fread(&u,4,1,in);
+
+    printf("[%d] = 0x%08X (%f), %d (%d)\n",
            i,
-           placement.model,
-           placement.unk0,
-           placement.position.x, placement.position.y, placement.position.z,
-           placement.unk1,
-           placement.scale.x, placement.scale.y, placement.scale.z);
+           u, *(float*)&u,
+           u % 512, 512 - (u % 512));
+
   }
 
+  putKey("objects");
+  startArray();
+  for(unsigned int i = 0; i < header.objectCount; i++) {
+
+    Object object;
+    char objectName[256];
+    fread(objectName, 32, 1, in);
+    objectName[32] = '\0';
+    size_t length = strlen(objectName);
+    // Read name in chunks [first chunk is 32 byte each chunk after that is 8 byte]
+    if(length == 32) {
+      //FIXME: Do this in a loop?!
+      fread(&objectName[length], 8, 1, in);
+      objectName[length + 8] = '\0';
+    }
+    fread(&object, sizeof(object), 1, in);
+
+    startObject();
+
+    putKey("name"); putString(objectName);
+    putKey("unk0"); putInteger(object.unk0);
+    putKey("unk1"); putInteger(object.unk1);
+
+    putKey("placements");
+    startArray();
+
+    printf("[%d] = Placing '%s' 0x%08X 0x%08X, %d placement(s)",
+           i,
+           objectName,
+           object.unk0,
+           object.unk1,
+           object.placementCount);
+
+    for(unsigned int j = 0; j < object.placementCount; j++) {
+      Placement placement;
+      fread(&placement, sizeof(placement), 1, in);
+
+      printf(";; position: { %f %f %f } angle: { %f %f %f } scale: { %f %f %f }",
+             placement.position.x, placement.position.y, placement.position.z,
+             placement.angle.x, placement.angle.y, placement.angle.z,
+             placement.scale.x, placement.scale.y, placement.scale.z);
+
+      //FIXME: Export unknown data?!
+
+      startObject();
+
+      putKey("position");
+      startArray();
+      putFloat(placement.position.x);
+      putFloat(placement.position.y);
+      putFloat(placement.position.z);
+      endArray();
+
+      putKey("angle");
+      startArray();
+      putFloat(placement.angle.x);
+      putFloat(placement.angle.y);
+      putFloat(placement.angle.z);
+      endArray();
+
+      putKey("scale");
+      startArray();
+      putFloat(placement.scale.x);
+      putFloat(placement.scale.y);
+      putFloat(placement.scale.z);
+      endArray();
+
+      endObject();
+    }
+    printf("\n");
+    endArray();
+  
+    endObject();
+  }
+  endArray();
+
+  endObject();
+
   fclose(in);
+  fclose(out);
 
   return 0;
 }
