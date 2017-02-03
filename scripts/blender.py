@@ -44,12 +44,16 @@ def fileContents(filename):
 
 enums = json.loads(fileContents(os.path.join(data_path, "./enums.json"))) # Load _Enums file [as json]
 objs  = json.loads(fileContents(os.path.join(data_path, "./table.json"))) # Load table file [as json]
-dil   = json.loads(fileContents(os.path.join(data_path, "./dil.json")))   # Load Placement file [as json]
+dil0  = json.loads(fileContents(os.path.join(data_path, "./dil0.json")))  # Load Visual Placement file [as json]
+dil1  = json.loads(fileContents(os.path.join(data_path, "./dil1.json")))  # Load Light Placement file [as json]
 
 def resourceIndexFromName(name):
   return enums[name]['index']
 
-def placementFromName(name):
+def resourcePath(resource, extension):
+  return str(resourceIndexFromName(resource['resource'])) + "-" + str(resource['index']) + "." + extension
+
+def placementFromName(dil, name):
   for placement in dil['objects']:
     a = placement['name']
     b = name
@@ -124,7 +128,7 @@ def dilPlace(imported, obj):
   else:
     #FIXME: TODO
     print("pos: " + str(dilPos) + " for " + str(obj))
-    var = placementFromName(dilPos['variable'])
+    var = placementFromName(dil0, dilPos['dilName'])
     if var == None:
       #FIXME: Delete object now?!
       return
@@ -132,11 +136,56 @@ def dilPlace(imported, obj):
     for placement in placements:
       print("Want this at " + str(placement))
       # FIXME: Place this object at all locations?!
-    placement = placements[0]
+    placement = placements[dilPos['dilIndex']]
     dilPlaceInstance(imported, placement)
 
 #print(objs)
   
+
+# Load lights from PBTable
+for key in objs:
+  obj = objs[key]
+  if obj['type'] != "PBTable":
+    continue
+  obj = obj['data']
+
+  for d in obj:
+
+    if d['type'] == "Dil":
+      visualDil = d['data']
+
+    if d['type'] == "LightingData":
+      lightDil = d['data'] # FIXME: Remove anything but "name" and "index" ?!
+      lights = d['data']['lights']
+
+
+print("Would be using " + resourcePath(visualDil, "json") + " as DIL Visual placement")
+print("Would be using " + resourcePath(lightDil, "json") + " as DIL Light placement")
+
+# Place lights!
+if True:
+  for light in lights:
+    var = placementFromName(dil1, light['dilName'])
+    if var == None:
+      #FIXME: Delete object now?!
+      continue
+
+    print(var)
+    placement = var['placements'][light['dilIndex']]
+   
+    # What about angle and scale?!
+    p = placement['position']
+    xyz = (f * p[0], f * p[1], f * p[2])
+
+    bpy.ops.object.lamp_add(type='POINT', radius=1, view_align=False, location=xyz, layers=[True] * 20)
+    bpy.context.object.data.name = light['dilName'] + ";" + str(light['dilIndex']) + ";" + light['type'] + ";" + str(light['index'])
+    bpy.context.object.data.color = light['color'] # RGB Color (FIXME: Normalize?!)
+    #FIXME: unk0
+    bpy.context.object.data.energy = light['brightness'] * 0.001 # Brightness [and a hacky factor I came up with]
+    # bpy.context.object.data.falloff_type = 'CONSTANT' # Falloff mode
+    # bpy.context.object.data.distance = 5.05 # Falloff style
+    # bpy.context.object.data.use_sphere = True # Use bounding sphere for lamp influence
+
 
 # Iterate over objects and find PBObject entries
 for key in objs:
@@ -309,8 +358,8 @@ for key in objs:
 # Only show visuals
 scene.layers = [True] * 10 + [False] * 10
 
-print("dir: " + str(scene.game_settings.gravity))
-print("used: " + str(scene.use_gravity))
+#print("dir: " + str(scene.game_settings.gravity))
+#print("used: " + str(scene.use_gravity))
 #scene.game_settings.physics_gravity = (0.0, -0.5, -10.0) # Bugs out!
 
 if False:

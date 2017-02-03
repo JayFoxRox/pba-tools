@@ -23,7 +23,8 @@ echo "$SCRIPT_DIR/convert.sh $outPath/unpacked $outPath/converted"
 bash $SCRIPT_DIR/convert.sh $outPath/unpacked $outPath/converted
 
 # Extra copy of the placement and table file [a bit hacky..]
-$BIN_DIR/format002A $outPath/unpacked/*-0.002A $outPath/dil.json
+$BIN_DIR/format002A $outPath/unpacked/*-0.002A $outPath/dil0.json
+$BIN_DIR/format002A $outPath/unpacked/*-1.002A $outPath/dil1.json
 $BIN_DIR/pba-csv $outPath/converted/$tmpHack-1.csv $outPath/table.json
 
 echo "blender --python $SCRIPT_DIR/blender.py -- $outPath"

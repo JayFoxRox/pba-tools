@@ -232,10 +232,10 @@ void handleTable() {
       } else if (!strcmp(type, "TiltSwitch")) {
         copyInteger(); // Switch index
       } else if (!strcmp(type, "Dil")) {
-        const char* resourceName = parseString();
-        unsigned int always0 = parseInteger();
-        assert(always0 == 0);
-        putNull();
+        startObject();
+        putKey("resource"); copyString();
+        putKey("index"); copyInteger();
+        endObject();
       } else if (!strcmp(type, "Controls")) {
         putNull();
       } else if (!strcmp(type, "Gravity")) {
@@ -272,13 +272,16 @@ void handleTable() {
         }
         putNull();
       } else if (!strcmp(type, "LightingData")) {
-        const char* resourceName = parseString();
-        unsigned int unk0 = parseInteger();
+        startObject();
+        putKey("resource"); copyString();
+        putKey("index"); copyInteger();
+        putKey("lights"); startArray();
         while(1) {
           const char* lightType = parseString();
           if(!strcmp(lightType, "EndLightingData")) {
             break;
           }
+          startObject();
           if(!strcmp(lightType, "LightON")) {
           } else if(!strcmp(lightType, "LightLamp")) {
           } else if(!strcmp(lightType, "LightFlasher")) {
@@ -290,16 +293,17 @@ void handleTable() {
           } else {
             printf("Unknown light type '%s'\n", lightType);
           }
-          int lightIndex = parseInteger();
-          const char* name = parseString();
-          unsigned int unk0 = parseInteger(); // Index of some sorts?!
-          float unk1 = parseFloat();
-          float unk2 = parseFloat();
-          float unk3 = parseFloat();
-          float unk4 = parseFloat();
-          float unk5 = parseFloat();
+          putKey("type"); putString(lightType);
+          putKey("index"); copyInteger(); // Called "num" in PBA files
+          putKey("dilName"); copyString();
+          putKey("dilIndex"); copyInteger();
+          putKey("color"); copyFloats(3);
+          putKey("unk0"); copyFloat();
+          putKey("brightness"); copyFloat();
+          endObject();
         }
-        putNull();
+        endArray();
+        endObject();
       } else {
         printf("Unknown PBTable type: '%s'\n", type);
         putNull();
@@ -327,10 +331,8 @@ void handleTable() {
         endObject();
       } else if (!strcmp(type, "DilPos")) {
         startObject();
-        putKey("variable"); copyString();
-        unsigned int always0 = parseInteger();
-        putKey("always0"); putInteger(always0);
-        assert(always0 == 0);
+        putKey("dilName"); copyString();
+        putKey("dilIndex"); copyInteger();
         endObject();
       } else if (!strcmp(type, "Solenoid")) {
         copyInteger();

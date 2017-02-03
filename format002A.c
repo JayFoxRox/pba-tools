@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 FILE* out = NULL;
 
@@ -35,7 +36,7 @@ union {
 */
     // objectCount = sizeof(unk)
     // 41 = 168 (not sure which game, but 2007-0 / totan?!)
-    // 120 = 168 (not sure which game, but 2007-1 / totan?!)
+    // 120 = ~~168~~ 484 (not sure which game, but 2007-1 / totan?!) [168 is actually garbage which was probably left in mem during resource creation?!]
     // 67 = 272 BK2K
     // 89 = 360 TAF PC
 } Header;
@@ -77,45 +78,13 @@ int main(int argc, char* argv[]) {
   putKey("sourceFile"); putString(header.sourceFile);
   putKey("sourcePath"); putString(header.sourcePath);
 
-uint32_t t = header.unk0;
-size_t l = 0;
-switch(t) {
-  case 0x08EB89D0: l = 324; break;
-  case 0x076D4E88: l = 164; break;
-  case 0x00BAB748: l = 164; break;
-  case 0x0554B640: l = 232; break;
-  case 0x05C5DE08: l = 176; break;
-  case 0x04DFFE58: l = 328; break;
-  case 0x069AC2F0: l = 216; break;
-  case 0x08F3C4F0: l = 156; break;
-  case 0x080739A8: l = 260; break;
-  case 0x05D170F8: l = 268; break;
-  case 0x08393130: l = 356; break;
-  case 0x08EB3288: l = 308; break;
-  case 0x0A236268: l = 232; break;
+  printf("Type: 0x%08X, Object count: %d\n", header.unk0, header.objectCount);
 
-  // DX11
-  case 0x06B82EF8: l = 232; break;
-  case 0x062DF990: l = 268; break;
-  case 0x064CB3A0: l = 308; break;
-
-
-  default:
-    printf("  case 0x%08X: l = ; break;\n", t);
-    assert(false);
-    break;
-}
-
-  printf("using l = %d, from: 0x%08X, %d\n", l, t, header.objectCount);
-  for(unsigned int i = 0; i < l / 4; i++) {
+  // FIXME: Pretty sure that all of this data is garbage. no idea why it is allocated..
+  for(unsigned int i = 0; i < header.objectCount; i++) {
     uint32_t u;
     fread(&u,4,1,in);
-
-    printf("[%d] = 0x%08X (%f), %d (%d)\n",
-           i,
-           u, *(float*)&u,
-           u % 512, 512 - (u % 512));
-
+    printf("[%d] = 0x%08X (%f)\n", i, u, *(float*)&u);
   }
 
   putKey("objects");

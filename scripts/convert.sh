@@ -54,8 +54,7 @@ for filename in $inPath/*.0025; do
   $BIN_DIR/format0025 "$filename"  "$outPath/$(basename "$filename" .0025).wav"
 done
 
-# FIXME: Only using -0.002A because -1.002A might be broken PS4 DILs
-for filename in $inPath/*-0.002A; do
+for filename in $inPath/*.002A; do
   echo "$filename"
   $BIN_DIR/format002A "$filename"  "$outPath/$(basename "$filename" .002A).json"
 done
