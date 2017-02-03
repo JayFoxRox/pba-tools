@@ -195,12 +195,15 @@ unsigned int copyArray() {
 
 void handleTable() {
   if (!strcmp(tableType, "PBTable")) {
+    putKey("data"); startArray();
     while(1) {
       const char* type = parseString();
       if (type == NULL) {
         break;
       }
-      putKey(type);
+      startObject();
+      putKey("type"); putString(type);
+      putKey("data");
       bool isHDR_ps3 = !strcmp(type, "HDR_ps3");
       if (!strcmp(type, "HDR") || isHDR_ps3) {
         //FIXME: This is a temporary measure because I don't care about HDR
@@ -212,10 +215,22 @@ void handleTable() {
         }
         putNull();
       } else if (!strcmp(type, "Resources")) {
-        const char* resourceNameStart = parseString();
-        const char* resourceNameEnd = parseString();
-        const char* resourceNameModels = parseString();
-        putNull();
+        startObject();
+        putKey("start"); copyString();
+        putKey("end"); copyString();
+        putKey("models"); copyString();
+        endObject();
+      } else if (!strcmp(type, "BallTrough")) {
+        startObject();
+        putKey("switches");
+        unsigned int count = copyArray();
+        for(unsigned int i = 0; i < count; i++) {
+          copyInteger();
+        }
+        endArray();
+        endObject();
+      } else if (!strcmp(type, "TiltSwitch")) {
+        copyInteger(); // Switch index
       } else if (!strcmp(type, "Dil")) {
         const char* resourceName = parseString();
         unsigned int always0 = parseInteger();
@@ -224,16 +239,13 @@ void handleTable() {
       } else if (!strcmp(type, "Controls")) {
         putNull();
       } else if (!strcmp(type, "Gravity")) {
+        startObject();
         // Yup.. "Unrivaled and critically acclaimed physics"
-        float slowX = parseFloat();
-        float slowY = parseFloat();
-        float slowZ = parseFloat();
-        float angle = parseFloat(); // Angle of table
-        float fastX = parseFloat();
-        float fastY = parseFloat();
-        float fastZ = parseFloat();
-        float slowSpeed= parseFloat();
-        putNull();
+        putKey("slow"); copyFloats(3);
+        putKey("angle"); copyFloat(); // Angle of table
+        putKey("fast"); copyFloats(3);
+        putKey("slowSpeed"); copyFloat();
+        endObject();
       } else if (!strcmp(type, "SPU_FX")) {
         //FIXME: This is a temporary measure because I don't care about SPUs
         while(1) {
@@ -270,6 +282,11 @@ void handleTable() {
           if(!strcmp(lightType, "LightON")) {
           } else if(!strcmp(lightType, "LightLamp")) {
           } else if(!strcmp(lightType, "LightFlasher")) {
+          } else if(!strcmp(lightType, "LightGI1")) {
+          } else if(!strcmp(lightType, "LightGI2")) {
+          } else if(!strcmp(lightType, "LightGI3")) {
+          } else if(!strcmp(lightType, "LightGI4")) {
+          } else if(!strcmp(lightType, "LightGI5")) {
           } else {
             printf("Unknown light type '%s'\n", lightType);
           }
@@ -287,16 +304,21 @@ void handleTable() {
         printf("Unknown PBTable type: '%s'\n", type);
         putNull();
       }
+      endObject();
     }
+    endArray();
   }
 
   if (!strcmp(tableType, "PBObject")) {
+    putKey("data"); startArray();
     while(1) {
       const char* type = parseString();
       if (type == NULL) {
         break;
       }
-      putKey(type);
+      startObject();
+      putKey("type"); putString(type);
+      putKey("data");
       if (!strcmp(type, "Object")) {
         //, PB_OBJECTTYPE_LAMPSET, 2589,
         startObject();
@@ -419,20 +441,23 @@ void handleTable() {
         const char* type = parseString();
         putNull();
       } else if (!strcmp(type, "Lamp")) {
+        //FIXME: This is kind of bad.. this can be repeating
+
         //, 1,		24,		 49,			48,			RSID_TBLACKKNIGHT2000_LAMP_TEXTURES,	EmuLamp, Smoothing,2,
         //, 6,		15,		31,				30,				RSID_TABLE_RIPLEYS_LAMP_TEXTURES,		EmuLamp,
-        unsigned int set = parseInteger();
-        unsigned int lampIndex = parseInteger();
-        unsigned int lampTextureOn = parseInteger();
-        unsigned int lampTextureOff = parseInteger();
-        unsigned int resource = parseInteger();
-        const char* type = parseString();
+        startObject();
+        putKey("set"); copyInteger();
+        putKey("index"); copyInteger();
+        putKey("textureOn"); copyInteger();
+        putKey("textureOff"); copyInteger();
+        putKey("resource"); copyString();
+        putKey("type"); copyString();
+        endObject();
         //const char* unk0 = parseString(); // Known: "Smoothing"
         //unsigned int unk1 = parseInteger();
-        putNull();
       } else if (!strcmp(type, "Collision")) {
         startObject();
-        const char* collisionType = parseString();
+        char* collisionType = parseString();
         putKey("type"); putString(collisionType);
         if (!strcmp(collisionType, "Mesh")) {
           putKey("data");
@@ -445,7 +470,7 @@ void handleTable() {
           }
           endArray();
         } else if (!strcmp(collisionType, "Sphere")) {
-          const char* mode = parseString();
+          char* mode = parseString();
           putKey("mode"); putString(mode);
           if (!strcmp(mode, "Manual")) {
             putKey("position"); copyFloats(3);
@@ -535,7 +560,9 @@ void handleTable() {
         printf("Unknown PBObject type: '%s'\n", type);
         putNull();
       }
+      endObject();
     }
+    endArray();
   }
 }
 

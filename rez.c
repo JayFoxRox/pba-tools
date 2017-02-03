@@ -1,3 +1,5 @@
+//#define PC11 //FIXME: Make this a CLI option
+
 #include <stdbool.h>
 #include <assert.h>
 #include <stdint.h>
@@ -244,22 +246,35 @@ int main(int argc, char* argv[]) {
         char buf[1024];
         sprintf(buf, "%s/%d-%d.%04X", outPath, header.resourceIndex + i, j, fileHeader.type);
         export(f, &fileHeader, buf,
-#if 0
+//FIXME: This is mostly guesswork..
+#ifndef PC11
           // Old version
           fileHeader.compression != 0
 #else
           // PC11
-          fileHeader.compression > 1
+          //fileHeader.compression > 1
+          (fileHeader.type == 0x0001 && fileHeader.compression != 0) ||
+          (fileHeader.type == 0x002A) ||
+          (fileHeader.type == 0x002C) ||
+          (fileHeader.type == 0x008E) ||
+          (fileHeader.compression > 1)
 #endif
         );
       }
 
       fseek(f, cursor, SEEK_SET);
     } else {
-      //FIXME: Dump resource directly..
       char buf[1024];
       sprintf(buf, "%s/%d.%04X", outPath, header.resourceIndex + i, resourceHeader.type);
-      export(f, &resourceHeader, buf, false);
+      export(f, &resourceHeader, buf,
+#ifndef PC11
+             // Old version
+             resourceHeader.compression != 0
+#else
+             // PC11
+             false
+#endif
+            );
     }
   }
 

@@ -1,4 +1,7 @@
 // Converts 008D files to jpg
+//FIXME: Find length of JFIF [by parsing the markers and searching EOI]
+
+//FIXME: Merge with 0022 [but keep the format checks seperated until it is more clear what actually happens]
 
 #include <assert.h>
 #include <stdbool.h>
@@ -38,7 +41,7 @@ int main(int argc, char* argv[]) {
     break;
   }
   case 0x0010: {
-    // RGBA?!
+    // A8 with a JFIF afterwards
 
     char alphaPath[1024];
     sprintf(alphaPath, "%s-alpha.tga", outPath);

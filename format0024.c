@@ -75,6 +75,8 @@ int main(int argc, char* argv[]) {
   }
 
   bool hasNormal = false; // atoi(argv[3]);
+
+  // FIXME: Figure out a pattern here...
   hasNormal |= (header.unk0 == 4161 && header.unk1 == 0x00002001);
   hasNormal |= (header.unk0 == 4163 && header.unk1 == 0x00002001);
   hasNormal |= (header.unk0 == 4163 && header.unk1 == 0x00642001);
@@ -83,8 +85,15 @@ int main(int argc, char* argv[]) {
   hasNormal |= (header.unk0 == 4163 && header.unk1 == 0x0F192001);
   hasNormal |= (header.unk0 == 4163 && header.unk1 == 0x0F142001);
   hasNormal |= (header.unk0 == 4291 && header.unk1 == 0x00002001);
-  hasNormal |= (header.unk0 == 69699 && header.unk1 == 0x00002001);
+  hasNormal |= (header.unk0 ==69699 && header.unk1 == 0x00002001);
   hasNormal |= (header.unk0 == 4162 && header.unk1 == 0x00002001);
+  hasNormal |= (header.unk0 == 4163 && header.unk1 == 0x460A2001);
+  hasNormal |= (header.unk0 == 4163 && header.unk1 == 0x0F0F2001);
+  hasNormal |= (header.unk0 == 4163 && header.unk1 == 0x0F232001);
+  hasNormal |= (header.unk0 == 4163 && header.unk1 == 0x00142001);
+  hasNormal |= (header.unk0 == 4163 && header.unk1 == 0x05232001);
+  hasNormal |= (header.unk0 == 4161 && header.unk1 == 0x1E0F2001);
+  hasNormal |= (header.unk0 == 4163 && header.unk1 == 0x321E2001);
 
   for(unsigned int i = 0; i < header.vertexCount; i++) {
     Vector position;
@@ -103,6 +112,7 @@ int main(int argc, char* argv[]) {
 #endif
       fprintf(out, "vn %f %f %f\n", normal.x, normal.y, normal.z);
     }
+
     struct {
       float u;
       float v;
@@ -145,7 +155,7 @@ int main(int argc, char* argv[]) {
            draw.unk2,
            draw.indexCount);
 
-    fprintf(out, "g draw%d\n", i);
+    fprintf(out, "g %s/draw%d\n", basename(outPath), i);
     fprintf(out, "usemtl %s/draw%d\n", mtlFile, i);
 
     for(unsigned int j = 0; j < draw.indexCount; j++) {
@@ -206,8 +216,6 @@ int main(int argc, char* argv[]) {
 
     fprintf(out, "newmtl %s/draw%d\n", mtlFile, i);
     fprintf(out, "map_Kd -s 1 1 %d-%d.tga\n", texture.resource, texture.file);
-    fprintf(out, "map_d -s 1 1 %d-%d-alpha.tga\n", texture.resource, texture.file);
-
   }
 
   while(!feof(in)) {

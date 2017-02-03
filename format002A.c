@@ -1,5 +1,5 @@
 // Prints 002A files
-//FIXME: Add some kind of conversion
+//FIXME: Add support for light-placements
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -38,7 +38,6 @@ union {
     // 120 = 168 (not sure which game, but 2007-1 / totan?!)
     // 67 = 272 BK2K
     // 89 = 360 TAF PC
-    // 187 = 360 TAF PS4 [identical to PC]
 } Header;
 
 typedef struct {

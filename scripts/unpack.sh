@@ -1,5 +1,9 @@
 #!/bin/bash
 
+inPath=$1
+outPath=$2
+
+BIN_DIR=.
 
 # Exit in case of failure
 set -e
@@ -10,21 +14,12 @@ shopt -s nullglob
 # Case insensitive matching (some files are *.Rez, others are *.rez)
 shopt -s nocaseglob
 
-BIN_DIR=.
-
 # Mostly working:
 
-mkdir -p unpacked-pc11
-for filename in resources-pc11/*.rez; do
-  $BIN_DIR/pba-rez "$filename" unpacked-pc11
-done
-
-exit
-
-mkdir -p unpacked
-for filename in resources/*.rez; do
+mkdir -p $outPath
+for filename in $inPath/*.rez; do
   echo "$filename"
-  $BIN_DIR/pba-rez "$filename" unpacked
+  $BIN_DIR/pba-rez "$filename" unpacked-pc11
 done
 
 echo "Success!"
