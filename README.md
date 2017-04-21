@@ -1,49 +1,36 @@
 This is a set of tools to operate on The Pinball Arcade (PBA) files.
 PBA is a video-game developed by [FarSight Studios](http://farsightstudios.com/).
 
+![A PBA table loaded in Blender](http://i.imgur.com/5tLnvJG.png)
+
 Most of the tools in this repository convert to [JSON](http://json.org), TGA or OBJ/MTL.
 
-This tool is not able to create any kind of PBA files yet!
+This tool is not able to *create* any kind of PBA files yet!
+It merely loads / converts PBA files to more usable file formats at the moment.
 
-# PBA Coordinate System
+# Compilation / Running
 
-Their coordinate system seems to be (from a players perspective):
+First install all dependencies:
 
-  +X = Right
-  +Y = Forward
-  +Z = Up
+* libtxc_dxtn
 
-The playfield center (including vertical elements) is usually located at 0.0, 0.0, 0.0.
-Based on dimensions of Medieval madness the PBA coordinate system is roughly:
+Then run the following commands to clone and compile
 
-1 unit = 0.01905cm = 0.0075inch
+```
+git clone https://github.com/JayFoxRox/pba-tools.git
+cd pba-tools
+mkdir build
+cd build
+cmake ..
+make -j 4
+```
 
-Human-readable angles are usually in degree, machine readable are usually in radians.
+The tools will be available in the build folder.
 
-# PBA bugs / issues / facts
+# License
 
-## General
-  - Tables contain wav versions of the emulation sounds at varying quality
-  - Reflections are hardcoded onto textures, sometimes in image-space
-  - Texture resolution is absolutely horrible
-  - Lamps and Flashers are simulated by switching between on/off textures
-  - Some Flashers have a mesh for their light-shine around them
-  - Apron missing hole for ball trough which is not simulated
-  - Subways and other "hidden" objects not modelled / simulated
-  - Plunger lane is not carved
-  - Missing playfield glass
-  - Meshes are already instanced and embedded
-  - Physics are actually arcade physics, not simulated physics
-  - Lots of redundancy in each file and across files
-  - Cameras are hardcoded for each device instead of defining a frustum
+License is TBD.
+Consider it (c) 2017 Jannik Vogel (JayFoxRox) until then.
 
-## BK2K
-  - Playfield texture contains lamps, walls and wires
-  - Main resource has typos / bug: "Gravity,0,0,0,0 Dampening" (missing comma)
-  - Spring (slows ball down) on wire after W-A-R not simulated
-
-## Ripley's
-  - 2704/29: Missing alpha
-
-## Medieval Madness
-  - Right Ramp contains a wire piece from the left ramp (vertical connection at the very bottom)
+(I hereby explicitly allow you to look at it, use it but not re-use code for other projects)
+If you have license recommendations, tell me about it in GitHub Issue #1
