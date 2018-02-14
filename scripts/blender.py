@@ -4,6 +4,7 @@ import bpy
 import os
 import json
 import sys
+import math
 
 argv = sys.argv
 argv = argv[argv.index("--") + 1:]
@@ -24,8 +25,8 @@ scene = bpy.data.scenes.new("Import")
 camera_data = bpy.data.cameras.new("Camera")
 
 camera = bpy.data.objects.new("Camera", camera_data)
-camera.location = (-2.0, 3.0, 3.0)
-camera.rotation_euler = (422.0, 0.0, 149)
+camera.location = (0.0, -4.0, 4.0)
+camera.rotation_euler = (60.0 * math.pi / 180.0, 0.0, 0.0)
 scene.objects.link(camera)
 
 # do the same for lights etc
@@ -35,7 +36,76 @@ scene.update()
 # make a new scene with cam and lights linked
 scene.camera = camera
 context.screen.scene = scene
-context.scene.render.engine = 'BLENDER_GAME'
+context.scene.render.engine = 'CYCLES'
+
+#bpy.context.scene.cycles.film_exposure = 0.01
+
+bpy.context.scene.view_settings.view_transform = 'Filmic'
+bpy.context.scene.view_settings.look = 'Filmic - Base Contrast'
+bpy.context.scene.sequencer_colorspace_settings.name = 'Filmic Log'
+
+bpy.context.scene.cycles.caustics_reflective = False
+bpy.context.scene.cycles.caustics_refractive = False
+
+bpy.context.scene.render.resolution_x = 960
+bpy.context.scene.render.resolution_y = 1080
+
+
+def createMaterial(name, path):
+  mat = bpy.data.materials.new(name)
+  mat.use_nodes = True
+  nodes = mat.node_tree.nodes
+  links = mat.node_tree.links
+
+  # Remove default node and get output node
+  nodes.remove(nodes.get('Diffuse BSDF'))
+  out_node = nodes.get('Material Output')
+
+
+  uv_node = nodes.new('ShaderNodeUVMap')
+
+  tex_node = nodes.new('ShaderNodeTexImage')
+
+  try:
+    tex_node.image = bpy.data.images.load(path)
+    alpha_tex_output = tex_node.outputs[1]
+  except:
+    try:
+      jpg_path = path[:-4] + ".jpg"
+      print("Loading JPEG as fallback: " + jpg_path)
+      tex_node.image = bpy.data.images.load(jpg_path)
+      try:
+        alpha_tex_node = nodes.new('ShaderNodeTexImage')
+        links.new(uv_node.outputs[0], alpha_tex_node.inputs[0])
+        alpha_tex_node.image = bpy.data.images.load(jpg_path + "-alpha.tga")
+        alpha_tex_output = alpha_tex_node.outputs[0]
+      except:
+        alpha_tex_output = None
+    except:
+      nodes.remove(tex_node)
+      tex_node = None
+      alpha_tex_output = None
+      #FIXME: Set a fallback material instead; assert(False)
+    
+
+  diffuse_node = nodes.new('ShaderNodeBsdfDiffuse')
+
+  final_bsdf_node = diffuse_node
+
+  if tex_node:
+    links.new(uv_node.outputs[0], tex_node.inputs[0])
+    links.new(tex_node.outputs[0], diffuse_node.inputs[0])
+    if alpha_tex_output:
+      mix_node = nodes.new('ShaderNodeMixShader')
+      alpha_node = nodes.new('ShaderNodeBsdfTransparent')
+      links.new(alpha_tex_output, mix_node.inputs[0])
+      links.new(alpha_node.outputs[0], mix_node.inputs[1])
+      links.new(final_bsdf_node.outputs[0], mix_node.inputs[2])
+      final_bsdf_node = mix_node
+
+  links.new(final_bsdf_node.outputs[0], out_node.inputs[0])
+
+  return mat
 
 def fileContents(filename):
     with open(filename) as f:
@@ -85,11 +155,24 @@ def importMesh(resourceName, fileIndex):
 
   imported = bpy.context.selected_objects
 
-
-
   print("imported:" + str(imported))
+
+
   #bpy.data.objects[]
+
   for i in imported:
+    path = None
+    me = i.data
+    if me.uv_textures.active is not None:
+      for tf in me.uv_textures.active.data:
+        if tf.image:
+          path = os.path.join(data_path, "./converted/" + tf.image.filepath)
+          print(path)
+    if len(i.data.materials) > 0:
+      mat = createMaterial(i.name, path)
+      i.data.materials[0] = mat
+    else:
+      pass # FIXME: Should we still set a material here?!
     i.scale *= f
 
   return imported
@@ -181,7 +264,12 @@ if True:
     bpy.context.object.data.name = light['dilName'] + ";" + str(light['dilIndex']) + ";" + light['type'] + ";" + str(light['index'])
     bpy.context.object.data.color = light['color'] # RGB Color (FIXME: Normalize?!)
     #FIXME: unk0
-    bpy.context.object.data.energy = light['brightness'] * 0.001 # Brightness [and a hacky factor I came up with]
+    bpy.context.object.data.energy = light['brightness'] * f * 0.001 # Brightness [and a hacky factor I came up with]
+
+    #FIXME: Set light size for soft shadow quality
+    bpy.context.object.data.node_tree.nodes["Emission"].inputs[0].default_value = light['color'] + [1]
+    bpy.context.object.data.node_tree.nodes["Emission"].inputs[1].default_value = light['brightness'] * f * 10000.0
+
     # bpy.context.object.data.falloff_type = 'CONSTANT' # Falloff mode
     # bpy.context.object.data.distance = 5.05 # Falloff style
     # bpy.context.object.data.use_sphere = True # Use bounding sphere for lamp influence
@@ -339,7 +427,7 @@ for key in objs:
         for i in imported:
           for m in i.material_slots:
             print("Slot: " + str(m))
-            m.material.game_settings.alpha_blend = 'ALPHA'
+            m.material.game_settings.alpha_blend = 'ALPHA_SORT'
             #FIXME: Only do this if the linked texture has alpha.. otherwise this breaks >.<      
 
         #meshes = [c for c in imported if c.type == 'MESH']
