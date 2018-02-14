@@ -1,5 +1,3 @@
-#define PC11 //FIXME: Make this a CLI option
-
 #include <stdbool.h>
 #include <assert.h>
 #include <stdint.h>
@@ -175,8 +173,20 @@ void export(FILE* f, FileHeader* fileHeader, const char* path, bool compressed) 
 }
 
 int main(int argc, char* argv[]) {
-  FILE* f = fopen(argv[1], "rb");
+
+  if (argc != 3) {
+    printf("Usage: %s <rez-file-path> <output-folder-path>\n", argv[0]);
+    return 1;
+  }
+
+  const char* inPath = argv[1];
   const char* outPath = argv[2];
+
+  FILE* f = fopen(inPath, "rb");
+  if (f == NULL) {
+    printf("Could not open '%s'\n", inPath);
+    return 1;
+  }
 
   // This is the actual header
 

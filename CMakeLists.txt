@@ -1,6 +1,9 @@
 set(CMAKE_C_STANDARD 11)
 
 add_executable(pba-rez rez.c)
+add_executable(pba-rez-pc11 rez.c)
+target_compile_definitions(pba-rez-pc11 PRIVATE -DPC11)
+
 add_executable(pba-csv csv.c json.h)
 add_executable(format0001 format0001.c)
 add_executable(format0022 format0022.c)
