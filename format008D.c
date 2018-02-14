@@ -65,6 +65,7 @@ int main(int argc, char* argv[]) {
     break;
   }
   default:
+    printf("Unknown format 0x%X\n", header.format);
     assert(false);
     break;
   }

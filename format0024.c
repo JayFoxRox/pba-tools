@@ -22,7 +22,7 @@ typedef struct {
 //       0x40 = normal ??
 
 
-  uint32_t drawCount;
+  uint32_t textureCount;
   uint32_t always0_a;
   uint32_t vertexCount;
   uint32_t always0_b;
@@ -36,7 +36,9 @@ typedef struct {
 
   uint32_t faceCount; // triangle count without degenerates ?!
   uint32_t always0_c[4];
-  uint32_t unk[16+38-7];
+  uint32_t unk[16+38-7-2];
+  uint32_t drawCount;
+  uint32_t unk2;
   uint32_t indexCount;
   uint32_t always0_d[7];
 } Header;
@@ -73,6 +75,7 @@ int main(int argc, char* argv[]) {
     d = header.unk[i];
     printf("[%d] = 0x%08X [%d]\t\t%f\n", i, d, d, *(float*)&d); // Unknown
   }
+//  assert(header.unk[45] == header.drawCount);
 
   bool hasNormal = false; // atoi(argv[3]);
 
@@ -94,6 +97,7 @@ int main(int argc, char* argv[]) {
   hasNormal |= (header.unk0 == 4163 && header.unk1 == 0x05232001);
   hasNormal |= (header.unk0 == 4161 && header.unk1 == 0x1E0F2001);
   hasNormal |= (header.unk0 == 4163 && header.unk1 == 0x321E2001);
+  hasNormal |= (header.unk0 == 4163 && header.unk1 == 0x0F4B2001);
 
   for(unsigned int i = 0; i < header.vertexCount; i++) {
     Vector position;
@@ -139,7 +143,8 @@ int main(int argc, char* argv[]) {
   for(unsigned int i = 0; i < header.drawCount; i++) {
 
     typedef struct {
-      uint32_t unk0;
+      uint16_t unk0a; // Texture index?
+      uint16_t unk0b;
       uint32_t unk1;
       uint32_t unk2; // Sometimes matches vertexCount ?!
       uint32_t indexCount;
@@ -148,15 +153,16 @@ int main(int argc, char* argv[]) {
     Draw draw;
     fread(&draw, sizeof(draw), 1, in);
 
-    printf("[%d] = 0x%08X 0x%08X 0x%08X, indexCount: %d\n",
+    printf("[%d] = 0x%04X 0x%04X 0x%08X 0x%08X, indexCount: %d\n",
            i,
-           draw.unk0,
+           draw.unk0a,
+           draw.unk0b,
            draw.unk1,
            draw.unk2,
            draw.indexCount);
 
     fprintf(out, "g %s/draw%d\n", basename(outPath), i);
-    fprintf(out, "usemtl %s/draw%d\n", mtlFile, i);
+    fprintf(out, "usemtl %s/texture%d\n", mtlFile, draw.unk0a);
 
     for(unsigned int j = 0; j < draw.indexCount; j++) {
 
@@ -203,18 +209,20 @@ int main(int argc, char* argv[]) {
   fclose(out);
   out = fopen(mtlPath, "wb");
 
-  for(unsigned int i = 0; i < header.drawCount; i++) {
+  for(unsigned int i = 0; i < header.textureCount; i++) {
     typedef struct {
       uint16_t file;
       uint16_t resource;
       uint8_t always0[20];
     } TextureReference;
 
+    printf("Reading tex at %d\n", ftell(in));
+
     TextureReference texture;
     fread(&texture, sizeof(texture), 1, in);
     printf("[%d] = resource: %d, index: %d\n", i, texture.resource, texture.file);
 
-    fprintf(out, "newmtl %s/draw%d\n", mtlFile, i);
+    fprintf(out, "newmtl %s/texture%d\n", mtlFile, i);
     fprintf(out, "map_Kd -s 1 1 %d-%d.tga\n", texture.resource, texture.file);
   }
 

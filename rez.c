@@ -1,4 +1,4 @@
-//#define PC11 //FIXME: Make this a CLI option
+#define PC11 //FIXME: Make this a CLI option
 
 #include <stdbool.h>
 #include <assert.h>
