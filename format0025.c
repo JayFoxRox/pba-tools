@@ -1,4 +1,10 @@
 // Converts 0025 files to WAV
+//
+// (C) 2017 Jannik Vogel
+//
+// Licensed under GPLv2 or later.
+// See LICENSE.txt for more information.
+
 //FIXME: What's different with unk0 == 1 ?!
 
 #include <stdint.h>

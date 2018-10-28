@@ -1,4 +1,10 @@
 // Zero terminates 0001 files
+//
+// (C) 2017 Jannik Vogel
+//
+// Licensed under GPLv2 or later.
+// See LICENSE.txt for more information.
+
 //FIXME: Some files are actually ROMs so the tool won't work?!
 
 #include <stdint.h>

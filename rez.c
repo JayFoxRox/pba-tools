@@ -1,3 +1,10 @@
+// Routines to work with PBA rez files
+//
+// (C) 2017 Jannik Vogel
+//
+// Licensed under GPLv2 or later.
+// See LICENSE.txt for more information.
+
 #include <stdbool.h>
 #include <assert.h>
 #include <stdint.h>

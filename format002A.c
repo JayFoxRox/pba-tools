@@ -1,4 +1,10 @@
 // Prints 002A files
+//
+// (C) 2017 Jannik Vogel
+//
+// Licensed under GPLv2 or later.
+// See LICENSE.txt for more information.
+
 //FIXME: Add support for light-placements
 
 #include <stdint.h>

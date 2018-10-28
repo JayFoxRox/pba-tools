@@ -1,4 +1,9 @@
 // This converts a PBA CSV file to JSON (which is far easier to parse)
+//
+// (C) 2017 Jannik Vogel
+//
+// Licensed under GPLv2 or later.
+// See LICENSE.txt for more information.
 
 // Assumptions:
 // * Comma at end of line is implied (sometimes given, sometimes not)
