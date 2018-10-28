@@ -1,4 +1,9 @@
 // Converts 0024 files to obj / mtl
+//
+// (C) 2017 Jannik Vogel
+//
+// Licensed under GPLv2 or later.
+// See LICENSE.txt for more information.
 
 #include <stdint.h>
 #include <stdbool.h>

@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+
+# Script to import pre-processed PBA files into Blender
+#
+# (C) 2017 Jannik Vogel
+#
+# Licensed under GPLv2 or later.
+# See LICENSE.txt for more information.
+
 # Invoke using "blender --python blender.py -- <path-to-table file>"
 
 import bpy

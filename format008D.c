@@ -1,4 +1,10 @@
 // Converts 008D files to jpg
+//
+// (C) 2017 Jannik Vogel
+//
+// Licensed under GPLv2 or later.
+// See LICENSE.txt for more information.
+
 //FIXME: Find length of JFIF [by parsing the markers and searching EOI]
 
 //FIXME: Merge with 0022 [but keep the format checks seperated until it is more clear what actually happens]

@@ -1,4 +1,9 @@
 // JSON helper routines
+//
+// (C) 2017 Jannik Vogel
+//
+// Licensed under GPLv2 or later.
+// See LICENSE.txt for more information.
 
 static unsigned int nesting = 0;
 static bool isFirst = true; // Wether an element is the first within the object / array

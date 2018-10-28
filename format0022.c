@@ -1,4 +1,10 @@
 // Converts 0022 files to tga
+//
+// (C) 2017 Jannik Vogel
+//
+// Licensed under GPLv2 or later.
+// See LICENSE.txt for more information.
+
 //FIXME: Somehow store used-size + mipmaps
 
 #include <assert.h>
